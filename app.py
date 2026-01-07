@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import pickle
 
 # ===== LOAD MODEL =====
@@ -16,7 +15,10 @@ st.divider()
 
 # ===== INPUT FEATURES =====
 limit_bal = st.number_input("Limit Balance", min_value=0.0, value=200000.0)
-sex = st.selectbox("Gender", [1, 2])  # 1=Male, 2=Female
+
+sex_label = st.selectbox("Gender", ["Male", "Female"])
+sex = 1 if sex_label == "Male" else 2
+
 education = st.selectbox("Education Level", [1, 2, 3, 4])
 marriage = st.selectbox("Marital Status", [1, 2, 3])
 age = st.number_input("Age", min_value=18, max_value=100, value=30)
@@ -26,15 +28,21 @@ pay_amt1 = st.number_input("Payment Amount Month 1", value=20000.0)
 
 # ===== PREDICTION =====
 if st.button("Predict"):
-    input_data = np.array([[
-        limit_bal, sex, education, marriage, age,
-        bill_amt1, pay_amt1
-    ]])
+    with st.spinner("Predicting..."):
+        input_df = pd.DataFrame([{
+            "LIMIT_BAL": limit_bal,
+            "SEX": sex,
+            "EDUCATION": education,
+            "MARRIAGE": marriage,
+            "AGE": age,
+            "BILL_AMT1": bill_amt1,
+            "PAY_AMT1": pay_amt1
+        }])
 
-    prediction = model.predict(input_data)[0]
-    prob = model.predict_proba(input_data)[0][1]
+        prediction = model.predict(input_df)[0]
+        prob = model.predict_proba(input_df)[0][1]
 
     if prediction == 1:
-        st.error(f"⚠️ Default Risk (Probability: {prob:.2f})")
+        st.error(f"⚠️ Default Risk (Probability: {prob*100:.2f}%)")
     else:
-        st.success(f"✅ No Default Risk (Probability: {prob:.2f})")
+        st.success(f"✅ No Default Risk (Probability: {(1-prob)*100:.2f}%)")
